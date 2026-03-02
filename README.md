@@ -434,13 +434,30 @@ The goal is to make the domain:
   - Orchestration vs choreography, with compensating actions.
 - **Outbox pattern**
   - Persist business data + event in one local transaction, publish later.
-- **Exactly-once semantics**
+    -- **Exactly-once semantics**
   - Often implemented as **at-least-once + idempotency** in practice.
-- Staff-level explanation:
+    -- Staff-level explanation:
   - Why 2PC across microservices is a bad idea.
   - How to achieve safe eventual consistency.
 
-### 9.4 Microservices anti-patterns
+### 9.4 API gateway vs BFF
+
+- **API Gateway**
+  - Central entry point for all external traffic into the microservice landscape.
+  - Typical responsibilities: routing to services, TLS termination, rate limiting, authentication, logging, request/response transformation.
+  - Should expose **generic, reusable APIs** that can be consumed by multiple clients (web, mobile, partners), and stay relatively stable.
+- **BFF (Backend for Frontend)**
+  - A thin backend **per client experience** (e.g. Web BFF, Mobile BFF) that speaks to the gateway and/or services.
+  - Responsibilities: aggregating data from multiple services, shaping payloads to match each UI, hiding chatty interactions from the frontend.
+  - Allows different clients to evolve at different speeds (mobile vs web) without forcing breaking changes on all consumers.
+- **How they work together**
+  - A common pattern: **clients → BFFs → API Gateway → microservices** (or BFFs calling services directly when simple).
+  - The gateway focuses on cross-cutting concerns (authN/Z, throttling, observability), while BFFs focus on **client-specific UX and composition**.
+- **Pitfalls**
+  - Overloading the gateway with too much business logic turns it into a bottleneck and “mini-monolith”.
+  - Too many BFFs with duplicated logic and no ownership boundaries can create fragmentation; treat BFFs as real services with clear teams and contracts.
+
+### 9.5 Microservices anti-patterns
 
 - **Distributed monolith**.
 - **Chatty services** (too many synchronous calls).
@@ -448,16 +465,16 @@ The goal is to make the domain:
 - **Premature over-engineering**.
 - Classic interview: “When would you NOT use microservices?” (answer: when a modular monolith is enough).
 
-### 9.5 Cloud & infrastructure
+### 9.6 Cloud & infrastructure
 
-#### 9.5.1 Containers & orchestration
+#### 9.6.1 Containers & orchestration
 
 - Docker layering and immutable images.
 - Health checks: liveness vs readiness.
 - Rolling updates and HPA (Horizontal Pod Autoscaler).
 - Kubernetes as the standard platform in many orgs.
 
-#### 9.5.2 CI/CD
+#### 9.6.2 CI/CD
 
 - Trunk-based development vs GitFlow.
 - Blue/Green deployment.
@@ -465,7 +482,7 @@ The goal is to make the domain:
 - Feature flags.
 - Tools: GitHub Actions, GitLab CI, Jenkins.
 
-### 9.6 Performance & scalability (Staff level)
+### 9.7 Performance & scalability (Staff level)
 
 - **Thread pool tuning**.
 - **Backpressure** (especially with Kafka / reactive streams).
@@ -474,7 +491,7 @@ The goal is to make the domain:
 - Understanding **CPU-bound vs IO-bound** workloads.
 - Typical question: how you investigate degradation under load (metrics, profiling, traces, bottlenecks).
 
-### 9.7 Security
+### 9.8 Security
 
 - **OAuth2 vs JWT** (flows, scopes, token types).
 - Token expiration and refresh strategies.
@@ -482,7 +499,7 @@ The goal is to make the domain:
 - **OWASP Top 10** for modern APIs.
 - Distributed rate limiting as an extra protection layer.
 
-### 9.8 Technical leadership
+### 9.9 Technical leadership
 
 - Defining **technical standards** and guardrails.
 - Handling **architectural disagreements** via explicit trade-offs.
@@ -490,14 +507,14 @@ The goal is to make the domain:
 - Using **ADR (Architecture Decision Records)** to document impact and context.
 - Understanding the **organizational impact** of technical decisions.
 
-### 9.9 Data modeling & messaging (Kafka)
+### 9.10 Data modeling & messaging (Kafka)
 
 - **Schema evolution**.
 - **Backward, forward, and full** compatibility.
 - Avro vs JSON (size, validation, schema registry).
 - Consumer groups, offsets, and partitioning (keys, ordering, parallelism).
 
-### 9.10 Additional GraphQL topics
+### 9.11 Additional GraphQL topics
 
 - When NOT to use GraphQL:
   - Simple APIs with good HTTP caching and stable patterns.
@@ -506,7 +523,7 @@ The goal is to make the domain:
 - Cacheability (caching by query/variables, gateway-level caching).
 - **BFF (Backend for Frontend)** exposing GraphQL/REST tailored to each client.
 
-### 9.11 Study priorities (Staff today)
+### 9.12 Study priorities (Staff today)
 
 1. Observability (logs, metrics, tracing).
 2. Saga + Outbox (distributed consistency).
