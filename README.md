@@ -104,11 +104,59 @@ Fundamentals of Software Architecture and Engineering
 - **ACID**
   - Atomicity, Consistency, Isolation, Durability.
   - Strong transactions with immediate consistency (typical RDBMS).
+  - **Focuses on correctness of data and transactions, not on availability or scalability**.
 - **BASE**
   - Basic Available, Soft state, Eventual consistency.
   - Focus on availability/scale, accepting temporary inconsistency.
 
-### 3.3 Impact on Kafka + microservices
+### 3.3 Scaling ACID databases (reads vs writes)
+
+- **Reads**
+  - **Read replicas**: primary node handles writes; replicas replay the transaction log and serve read-only queries.
+  - **Caching** (Redis/Memcached): keep hot data in memory; DB remains the source of truth and ACID boundary.
+  - **Sharding for reads**: partition data by tenant/region/key, each shard being its own ACID database.
+- **Writes**
+  - First, **scale up and optimize**: proper indexing, shorter transactions, batching, query tuning.
+  - Then, **sharding**: distribute writes across partitions; ACID is usually guaranteed **per shard**, and cross-shard transactions are avoided or very rare.
+  - For global strong consistency at scale, use **distributed SQL / NewSQL** systems (Spanner-like, Raft/Paxos-based), accepting higher latency and occasional unavailability under partitions (CAP trade-offs).
+
+#### 3.3.1 Example – read replicas for an OLTP system
+
+- **Context**
+  - E-commerce application with far more reads (browsing products, listing orders) than writes.
+  - A single relational DB is close to CPU/IO limits mainly due to `SELECT`s.
+- **Topology**
+  - One **primary** node (`orders_primary`) that receives all writes (`INSERT/UPDATE/DELETE`) and can also serve critical reads.
+  - Two **read replica** nodes (`orders_replica_1`, `orders_replica_2`) that consume the **transaction log** from the primary and apply changes transactionally.
+- **How the application uses it**
+  - The driver or repository layer distinguishes:
+    - **Critical reads** (for example, fetching the latest payment state) → go to the **primary**.
+    - **Non-critical / listing reads** (for example, listing user orders, loading product catalogs) → go to one of the **replicas** via load balancing.
+  - Each replica is a full **ACID** database; replication can be:
+    - **Synchronous**: a commit only succeeds once at least one replica has applied it; reads can be strongly consistent but with higher latency.
+    - **Asynchronous**: the primary commits first; replicas may lag slightly; reads from replicas are **eventually consistent**.
+- **Trade-offs**
+  - Benefit: horizontal scaling of **reads** without changing the data model; the primary carries less load.
+  - Cost: you must decide where it is acceptable to read slightly stale data (with async replication) and handle primary/replica failover logic.
+
+#### 3.3.2 Example – user-based sharding in a SaaS
+
+- **Context**
+  - Multi-tenant SaaS with many users per customer (tenant).
+  - A single database can no longer handle the write/read volume.
+- **Sharding decision**
+  - Choose `tenant_id` as the **shard key**.
+  - Create 4 physical shards: `users_shard_0`, `users_shard_1`, `users_shard_2`, `users_shard_3`.
+  - Routing rule: `shard_index = hash(tenant_id) % 4`.
+- **How the application uses it**
+  - For an authenticated request, the application resolves the `tenant_id`.
+  - The persistence layer (for example, `UserRepository`) computes the `shard_index` and opens a connection only to the corresponding shard.
+  - Within a shard, operations like “create user”, “update profile”, and “reset password” run in **normal ACID transactions** (per shard).
+- **Trade-offs**
+  - Benefit: user reads and writes are spread across 4 databases, reducing contention on a single node.
+  - Cost: operations that need data from multiple tenants (for example, global reporting) no longer fit in a single ACID transaction; they are done via separate queries to each shard + aggregation in the application or analytical pipelines.
+
+### 3.4 Impact on Kafka + microservices
 
 - Events / Kafka are naturally more **BASE**:
   - Consumers read at different times.
