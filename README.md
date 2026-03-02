@@ -19,7 +19,8 @@ Fundamentals of Software Architecture and Engineering
 - **OCP (Open/Closed Principle) violation**
   - A `PaymentService` full of `if (type == "CREDIT_CARD") ... else if (type == "PIX") ...`.
   - Every new payment type requires changing the same class in multiple places.
-- **LSP / ISP / DIP violations**
+- **LSP(Liskov Substitution Principle) / ISP( Interface Segregation) / DIP(Dependency Inversion Principle
+  ) violations**
   - LSP: subclasses that override a method only to throw `UnsupportedOperationException`.
   - ISP: huge interfaces (`UserOperations`) where clients need only a few methods.
   - DIP: concrete classes doing `new MySqlUserRepository()` instead of depending on an interface.
