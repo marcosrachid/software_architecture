@@ -328,37 +328,6 @@ The goal is to make the service’s domain layer:
 
 ---
 
-## 10. Domain-Driven Design (DDD)
-
-Domain-Driven Design sits at the **system and domain level**, guiding how you break a large problem into coherent subdomains and models before worrying about individual service internals.
-
-### 10.1 Core concepts
-
-- **Goal**
-  - Align the software model with the **business domain**, so that code reflects how experts actually think and talk about the problem.
-- **Ubiquitous Language**
-  - Shared vocabulary between devs and domain experts (e.g. `Order`, `Invoice`, `Shipment`, `Reservation`) used consistently in code, docs, and conversations.
-- **Bounded Contexts**
-  - Each subdomain has its own model and language boundaries (e.g. `Billing`, `Catalog`, `Shipping`), internally consistent but not forced to share the same definitions.
-  - Often, a bounded context is a **good candidate boundary for a microservice** or a module in a modular monolith.
-- **Entities and Value Objects**
-  - **Entities**: have identity and lifecycle (`Order`, `Customer`).
-  - **Value Objects**: defined only by their values (`Money`, `Address`, `DateRange`), immutable and easily replaceable.
-- **Aggregates**
-  - Clusters of domain objects with a single **aggregate root** that enforces invariants (e.g. `Order` as root owning `OrderItems`).
-- **Domain and Application Services**
-  - **Domain Services**: business operations that don’t naturally belong to one entity/aggregate.
-  - **Application Services**: orchestrate use cases, transactions, and calls to other systems, delegating business rules to the domain.
-
-### 10.2 When to use DDD
-
-- Most valuable in **complex, evolving domains**:
-  - Fintech/payments, logistics, healthcare, marketplaces, large B2B SaaS.
-- Usually overkill for:
-  - Very simple CRUD apps, admin panels, or small internal tools with limited business rules.
-
----
-
 ## 6. REST Design Best Practices
 
 ### 6.1 Idempotency
@@ -634,3 +603,34 @@ Domain-Driven Design sits at the **system and domain level**, guiding how you br
 3. Microservice anti-patterns.
 4. Kubernetes fundamentals (deployments, health checks, HPA).
 5. Technical leadership (trade-offs, ADRs, standards).
+
+---
+
+## 10. Domain-Driven Design (DDD)
+
+Domain-Driven Design sits at the **system and domain level**, guiding how you break a large problem into coherent subdomains and models before worrying about individual service internals.
+
+### 10.1 Core concepts
+
+- **Goal**
+  - Align the software model with the **business domain**, so that code reflects how experts actually think and talk about the problem.
+- **Ubiquitous Language**
+  - Shared vocabulary between devs and domain experts (e.g. `Order`, `Invoice`, `Shipment`, `Reservation`) used consistently in code, docs, and conversations.
+- **Bounded Contexts**
+  - Each subdomain has its own model and language boundaries (e.g. `Billing`, `Catalog`, `Shipping`), internally consistent but not forced to share the same definitions.
+  - Often, a bounded context is a **good candidate boundary for a microservice** or a module in a modular monolith.
+- **Entities and Value Objects**
+  - **Entities**: have identity and lifecycle (`Order`, `Customer`).
+  - **Value Objects**: defined only by their values (`Money`, `Address`, `DateRange`), immutable and easily replaceable.
+- **Aggregates**
+  - Clusters of domain objects with a single **aggregate root** that enforces invariants (e.g. `Order` as root owning `OrderItems`).
+- **Domain and Application Services**
+  - **Domain Services**: business operations that don’t naturally belong to one entity/aggregate.
+  - **Application Services**: orchestrate use cases, transactions, and calls to other systems, delegating business rules to the domain.
+
+### 10.2 When to use DDD
+
+- Most valuable in **complex, evolving domains**:
+  - Fintech/payments, logistics, healthcare, marketplaces, large B2B SaaS.
+- Usually overkill for:
+  - Very simple CRUD apps, admin panels, or small internal tools with limited business rules.
