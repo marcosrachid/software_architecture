@@ -188,19 +188,62 @@ Fundamentals of Software Architecture and Engineering
   - Keeps responding, accepting temporary divergence across nodes.
   - Suitable for social feeds, analytics, counters.
 
-### 4.3 Kafka and CAP
+### 4.3 Concrete examples (CA, CP, AP)
+
+- **CA (Consistent + Available, not partition-tolerant)**
+  - Example: a single-node relational database (one Postgres/MySQL instance) behind an application server.
+  - Why CA:
+    - As long as the single node is up, every request sees the same data (**consistency**) and the system responds (**availability**).
+    - There is no meaningful tolerance to network partitions between replicas, because there are no replicas; if the node or its network link fails, the system is simply down (no **P**).
+- **CP (Consistent + Partition-tolerant)**
+  - Example: a strongly consistent metadata store like ZooKeeper/etcd used for leader election and configuration.
+  - Why CP:
+    - In the presence of a network partition, only the **majority quorum** is allowed to accept reads/writes; minority sides reject requests or become read-only.
+    - The system preserves a single, correct view of data across nodes (**consistency**) and continues operating on at least one side of the partition (**P**), while sacrificing availability on the others.
+- **AP (Available + Partition-tolerant)**
+  - Example: a Dynamo-style key-value store or Cassandra cluster serving user profile or feed data.
+  - Why AP:
+    - During a network partition, all reachable nodes continue to accept reads and writes (**availability**), even if different partitions temporarily diverge.
+    - The system tolerates partitions (**P**) by allowing replicas to diverge and later reconciling conflicts (e.g., last-write-wins, vector clocks), so it does not guarantee strict global consistency at all times.
+
+### 4.4 Kafka and CAP
 
 - Kafka is usually viewed as **AP** with strong per-partition ordering.
 - Guarantees depend on `acks`, `min.insync.replicas`, and ISR configuration.
 - Inside a partition, ordering is strong; consumers may be at different offsets.
 
-### 4.4 NoSQL choices (CP vs AP)
+### 4.5 NoSQL choices (CP vs AP)
 
 - **CP** (HBase, etcd, strong-consistency modes of MongoDB)
   - Strong consistency, less availability during partitions.
 - **AP** (Cassandra, Riak, Dynamo-style)
   - High availability, async replication, conflict resolution later.
 - Many databases let you tune **consistency per operation** (strong/eventual).
+
+### 4.6 Business perspective – when to prefer CA, CP, or AP
+
+- **CA – Consistent + Available (no real partition tolerance)**
+  - Typical business: smaller or more centralized systems (e.g. on-prem ERP, a single-hospital medical record system) where everything lives in one primary database or site.
+  - Why it fits:
+    - The organization mainly cares that data is **correct and available** while the local infrastructure is healthy.
+    - It accepts that if the main site or DB goes down, the whole system is down until someone fixes it (no strong requirement for geo-distributed partition tolerance).
+- **CP – Consistent + Partition-tolerant**
+  - Typical business: domains where **wrong data is worse than being offline**:
+    - Bank balances, limits, and payments.
+    - Government registries (property records, identity).
+    - Cluster configuration / leader election / feature flags that must never contradict each other.
+  - Why it fits:
+    - In a failure or partition, the system may return errors or become partially unavailable,
+      but it preserves a **single, correct view of the truth**.
+    - Business stance: “better to temporarily block operations than to commit or show wrong state.”
+- **AP – Available + Partition-tolerant**
+  - Typical business: domains where **user experience and continuity** matter more than perfectly up-to-date data:
+    - Social network feeds, likes, comments.
+    - Real-time-ish analytics dashboards and counters.
+    - Recommendation systems (“trending”, “most viewed”, “you may also like”).
+  - Why it fits:
+    - Users prefer to see **something that works, even if slightly stale**, over error pages or timeouts.
+    - The business accepts temporary inconsistencies (a like that appears later, a counter that is off by a bit) as long as the system stays responsive and data converges over time.
 
 ---
 
