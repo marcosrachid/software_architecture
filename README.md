@@ -283,6 +283,49 @@ The goal is to make the domain:
 - Define repository interfaces in the domain; implement them in infra (Spring Data, etc.).
 - Keep domain as **plain objects**, not coupled to Spring/JPA/Kafka APIs.
 
+### 5.5 Example – Hexagonal Architecture in an order service
+
+- **Context**
+  - Simple e-commerce **Order Service** responsible for:
+    - Creating orders.
+    - Calculating totals and discounts.
+    - Reserving stock and charging payments via external systems.
+- **Domain (core)**
+  - Entities/aggregates:
+    - `Order`, `OrderItem`, `Customer`, `Money`.
+  - Domain services / use cases:
+    - `PlaceOrderService` (or `PlaceOrderUseCase`).
+    - `ConfirmPaymentService`.
+  - Ports (interfaces owned by the domain):
+    - `OrderRepository` (save/load orders).
+    - `InventoryPort` (reserve/release stock).
+    - `PaymentPort` (charge/refund).
+    - `EventPublisherPort` (publish domain events like `OrderPlaced`).
+- **Inbound adapters (driving the domain)**
+  - REST controller:
+    - `POST /orders` → maps HTTP request to a `PlaceOrderCommand` and calls `PlaceOrderService`.
+  - Kafka consumer:
+    - Listens to `PaymentConfirmed` events, maps payload to a domain DTO, and calls `ConfirmPaymentService`.
+  - CLI or batch job:
+    - A command-line tool that triggers retries or reconciliation by calling domain ports.
+- **Outbound adapters (driven by the domain)**
+  - Database adapter:
+    - `JpaOrderRepository` implements `OrderRepository` using JPA/JDBC.
+  - Inventory adapter:
+    - `HttpInventoryClient` implements `InventoryPort`, calling an external inventory microservice over HTTP.
+  - Payment adapter:
+    - `StripePaymentClient` (or similar) implements `PaymentPort`, talking to a third-party payment gateway.
+  - Messaging adapter:
+    - `KafkaEventPublisher` implements `EventPublisherPort`, converting domain events to Kafka messages.
+- **Why this is hexagonal**
+  - The **domain layer** only knows about **ports and pure domain types**; it has no imports from HTTP, Kafka, JPA, or vendor SDKs.
+  - Replacing infrastructure is a matter of swapping adapters:
+    - Change from REST to gRPC → replace inbound adapters, keep domain and ports.
+    - Change from Kafka to another broker → replace `EventPublisherPort` implementation.
+    - Change DB technology → implement `OrderRepository` with a new adapter.
+  - Testing becomes easier:
+    - Unit tests instantiate `PlaceOrderService` with **in-memory implementations** of the ports (fakes/mocks), without any real network or database.
+
 ---
 
 ## 6. REST Design Best Practices
