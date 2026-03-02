@@ -471,6 +471,36 @@ The goal is to make the domain:
   - **Dead Letter Queues (DLQs)** for messages that repeatedly fail.
 - Libraries: Resilience4j and cloud-native equivalents.
 
+### 9.2.1 Launch strategy, deciders, and managed lists
+
+- **Goal of a large-scale launch**
+  - The main objective is not “deploy the code”, but **control risk** when exposing new behavior to real users.
+  - Treat launches as an incremental experiment: start with a tiny blast radius, then gradually increase exposure while watching metrics.
+- **Deciders / feature flag service**
+  - Central service that answers questions like: `isEnabled("new_checkout_flow", userId, context)`.
+  - Supports:
+    - Percentage-based rollout (1%, 5%, 10%, 50%, 100% of traffic).
+    - Targeting by segment (internal users, specific tenants, premium plans, regions).
+    - Fast kill switches for problematic features.
+  - Key benefit: **deploy != release** — code can be shipped dark and only turned on later via configuration.
+- **Managed lists**
+  - Centrally managed allow/deny/target lists (often via admin UI) used together with flags:
+    - `allowlist` of beta customers or internal testers.
+    - `denylist` of sensitive tenants that must be excluded from experiments.
+  - Enable operations/business to change **who** is included in a rollout without redeploying.
+- **Typical rollout pattern**
+  - Phase 0: dark launch — code deployed, flag off; only unit/integration tests hit the path.
+  - Phase 1: enable for internal staff or a small managed allowlist of friendly customers.
+  - Phase 2: percentage-based rollout (1% → 5% → 10% → 50% → 100%), guarded by SLOs and alarms.
+  - Phase 3: make the new path the default; eventually remove old code and the temporary flags.
+- **Operational guardrails**
+  - Dashboards comparing “old vs new path” for:
+    - Error rate, latency, resource usage.
+    - Business metrics (conversion, drop-off, revenue impact).
+  - Clear runbooks for rollback:
+    - First, flip the flag off (fast mitigation).
+    - If necessary, roll back the deployment.
+
 ### 9.3 Advanced distributed consistency
 
 - **Saga pattern**
