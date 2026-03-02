@@ -206,6 +206,13 @@ Fundamentals of Software Architecture and Engineering
 
 ## 5. Hexagonal Architecture
 
+Hexagonal Architecture (a.k.a. **Ports and Adapters**) is an architectural style that puts the **business core at the center** and treats everything else (web, database, messaging, CLI, external APIs) as **replaceable adapters** around it.  
+The goal is to make the domain:
+
+- **Independent of infrastructure and frameworks** (you can change DB, transport, or UI with minimal impact).
+- **Easy to test** (core use cases can be tested with plain unit tests, without HTTP, Kafka, or real DBs).
+- **Stable over time** (business rules change, but infrastructure details can evolve in separate layers).
+
 ### 5.1 Ports & Adapters
 
 - **Port**: interface representing a use case or gateway (`OrderService`, `PaymentPort`).
