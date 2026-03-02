@@ -249,33 +249,12 @@ Fundamentals of Software Architecture and Engineering
 
 ## 5. Hexagonal Architecture
 
-Hexagonal Architecture (a.k.a. **Ports and Adapters**) is an architectural style that puts the **business core at the center** and treats everything else (web, database, messaging, CLI, external APIs) as **replaceable adapters** around it.  
-The goal is to make the domain:
+Hexagonal Architecture (a.k.a. **Ports and Adapters**) is an architectural style applied at the **service/application level**: it defines how a single service is structured internally so that its core business logic is surrounded by replaceable adapters (web, database, messaging, CLI, external APIs).  
+The goal is to make the service’s domain layer:
 
 - **Independent of infrastructure and frameworks** (you can change DB, transport, or UI with minimal impact).
 - **Easy to test** (core use cases can be tested with plain unit tests, without HTTP, Kafka, or real DBs).
 - **Stable over time** (business rules change, but infrastructure details can evolve in separate layers).
-
-### 5.0 Domain-Driven Design (DDD) – quick overview
-
-- **Goal**
-  - Align software model with the **business domain**, so that code reflects how experts actually think and talk about the problem.
-- **Core ideas**
-  - **Ubiquitous Language**:
-    - Shared vocabulary between devs and domain experts (e.g. `Order`, `Invoice`, `Shipment`, `Reservation`) used consistently in code, docs, and conversations.
-  - **Bounded Contexts**:
-    - Each subdomain has its own model and language boundaries (e.g. `Billing`, `Catalog`, `Shipping`), internally consistent but not forced to share the same definitions.
-  - **Entities and Value Objects**:
-    - **Entities**: have identity and lifecycle (`Order`, `Customer`).
-    - **Value Objects**: defined only by their values (`Money`, `Address`, `DateRange`), immutable and easily replaceable.
-  - **Aggregates**:
-    - Clusters of domain objects with a single **aggregate root** that enforces invariants (e.g. `Order` as root owning `OrderItems`).
-  - **Domain and Application Services**:
-    - **Domain Services**: business operations that don’t naturally belong to one entity/aggregate.
-    - **Application Services**: orchestrate use cases, transactions, and calls to other systems, delegating business rules to the domain.
-- **When to use DDD**
-  - Most valuable in **complex domains** with lots of rules and evolving requirements (fintech, logistics, healthcare, marketplaces).
-  - Usually overkill for very simple CRUD apps or small internal tools.
 
 ### 5.1 Ports & Adapters
 
@@ -346,6 +325,37 @@ The goal is to make the domain:
     - Change DB technology → implement `OrderRepository` with a new adapter.
   - Testing becomes easier:
     - Unit tests instantiate `PlaceOrderService` with **in-memory implementations** of the ports (fakes/mocks), without any real network or database.
+
+---
+
+## 10. Domain-Driven Design (DDD)
+
+Domain-Driven Design sits at the **system and domain level**, guiding how you break a large problem into coherent subdomains and models before worrying about individual service internals.
+
+### 10.1 Core concepts
+
+- **Goal**
+  - Align the software model with the **business domain**, so that code reflects how experts actually think and talk about the problem.
+- **Ubiquitous Language**
+  - Shared vocabulary between devs and domain experts (e.g. `Order`, `Invoice`, `Shipment`, `Reservation`) used consistently in code, docs, and conversations.
+- **Bounded Contexts**
+  - Each subdomain has its own model and language boundaries (e.g. `Billing`, `Catalog`, `Shipping`), internally consistent but not forced to share the same definitions.
+  - Often, a bounded context is a **good candidate boundary for a microservice** or a module in a modular monolith.
+- **Entities and Value Objects**
+  - **Entities**: have identity and lifecycle (`Order`, `Customer`).
+  - **Value Objects**: defined only by their values (`Money`, `Address`, `DateRange`), immutable and easily replaceable.
+- **Aggregates**
+  - Clusters of domain objects with a single **aggregate root** that enforces invariants (e.g. `Order` as root owning `OrderItems`).
+- **Domain and Application Services**
+  - **Domain Services**: business operations that don’t naturally belong to one entity/aggregate.
+  - **Application Services**: orchestrate use cases, transactions, and calls to other systems, delegating business rules to the domain.
+
+### 10.2 When to use DDD
+
+- Most valuable in **complex, evolving domains**:
+  - Fintech/payments, logistics, healthcare, marketplaces, large B2B SaaS.
+- Usually overkill for:
+  - Very simple CRUD apps, admin panels, or small internal tools with limited business rules.
 
 ---
 
